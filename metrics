@@ -1,0 +1,69 @@
+#!/usr/bin/python3
+
+import subprocess
+import os
+import sys
+import time
+
+def cmd(cmd):
+    cmd = subprocess.Popen([cmd], stdout=subprocess.PIPE)
+    output=str(cmd.communicate()[0])
+    return output
+
+def create_list(output):
+    list_of_data=[]
+    for line in output.split('\\n'):
+        row=line.strip().split(' ')
+        row=list(filter(None, row))
+        list_of_data.extend([row])
+    return list_of_data            
+
+def mem():
+    output=cmd('free')
+    list_of_mem=['virtual total', 'virtual used', 'virtual free', 'virtual shared', 'swap total', 'swap used', 'swap free']
+    list_of_data=create_list(output)
+    for i in range(7):
+            if (i<4):
+                    print(list_of_mem[i]+" "+list_of_data[1][i+1])
+            else:
+                    print(list_of_mem[i]+" "+list_of_data[2][i-3])
+
+def cpu():
+    try:
+        output=cmd('mpstat')
+        list_of_cpu=['system.cpu.user', 'system.cpu.nice', 'system.cpu.system', 'system.cpu.iowait', 'system.cpu.irq', 'system.cpu.softirq', 'system.cpu.stolen', 'system.cpu.guest', 'gnice', 'system.cpu.idle']
+        list_of_data=create_list(output)
+        for i in range(2,12):
+                if (i==3 or i==6 or i==7):
+                    continue
+                print(list_of_cpu[i-2]+" "+list_of_data[3][i])
+    except IOError as e:
+        print('ERROR: %s' % e)
+        sys.exit(3)
+
+def main():
+    #command=input()
+    command=str(sys.argv[1])
+    if(command=='cpu'):
+        cpu()
+    elif(command=='mem'):
+        mem()
+    elif(command=='loop'):
+        i=0
+        while True:
+                if(i%2==0):
+                        mem()
+                else:
+                        cpu()
+                time.sleep(10)
+                i+=1
+    elif(command=='-v'):
+        print('Version: 1.0')
+    elif(command=='-help'):
+        print('-v: version, cpu: call cpu metrics, mem: call memory metrics, loop: call cpu and memory metrics every 10 seconds')	
+    else:
+        print(error)
+           
+
+if __name__ == "__main__":
+    main()
